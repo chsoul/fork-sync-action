@@ -1,0 +1,30 @@
+name: Sync Forked Repos
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天午夜 00:00 运行一次
+  workflow_dispatch: # 手动触发工作流
+
+jobs:
+  sync-forks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh jq
+
+      - name: Authenticate with GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo $GITHUB_TOKEN | gh auth login --with-token
+
+      - name: Make sync-repos.sh executable
+        run: chmod +x ./sync-repos.sh
+
+      - name: Run sync-repos.sh script
+        run: ./sync-repos.sh

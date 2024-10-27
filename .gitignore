@@ -1,0 +1,53 @@
+# Node related
+node_modules/
+
+# macOS related
+.DS_Store
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Python related
+__pycache__/
+*.pyc
+
+# Shell history files
+*.sh_history
+
+# GitHub Actions generated files
+.github/workflows/*.log
+.github/workflows/*.bak
+
+# Secrets
+*.env
+.env*
+
+# Generated scripts or binaries
+sync-repos.sh~
+*.bak
+*.swp
+
+# Ignore Docker or container-related
+Dockerfile*
+*.docker
+
+# Ignore local IDE configurations
+.vscode/
+.idea/
+.vs/
+
+# Ignore compiled files
+*.out
+*.o
+
+# Git specific
+*.lock
+.gitignore~
+
+# GitHub Actions environment variables
+# Ignore settings files that may contain secrets or environment-specific variables
+.github/workflows/*.env
