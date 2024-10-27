@@ -18,13 +18,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gh jq
 
-      - name: Authenticate with GitHub CLI
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo $GITHUB_TOKEN | gh auth login --with-token
-
-      - name: Make sync-repos.sh executable
-        run: chmod +x ./sync-repos.sh
-
       - name: Run sync-repos.sh script
-        run: ./sync-repos.sh
+        run: | 
+            echo "Fetching the list of repositories for OWNER: $OWNER..."
+            repos=$(gh repo list "$OWNER" --limit 200 --json nameWithOwner,isFork)
+
+            for repo in $(echo "$repos" | jq -c '.[]'); do
+            nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
+            isFork=$(echo "$repo" | jq -r '.isFork')
+            
+            if [ "$isFork" = "true" ]; then
+                echo "Syncing forked repository: $nameWithOwner"
+                gh repo sync "$nameWithOwner"
+            else
+                echo "Skipping non-fork repository: $nameWithOwner"
+            fi
+            done
+        env:
+            GH_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
+            OWNER: ${{ github.repository_owner }}
