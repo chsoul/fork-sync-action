@@ -30,8 +30,10 @@
 
 1. Fork 这个仓库
 2. 在你的 GitHub 账户设置中创建一个具有适当权限的 Personal Access Token
-3. 在 fork 的仓库设置中，添加一个名为 `SYNC_GITHUB_TOKEN` 的 secret，值为你创建的 token
-4. 工作流将按计划自动运行，或者你可以手动触发
+3. 在 fork 的仓库设置中，添加一个名为 `SYNC_GITHUB_TOKEN` 的 secret，值为你创建的 token。会赋值到 `GH_TOKEN`
+4. `SYNC_GITHUB_TOKEN` 需要有 `repo` 权限，参考如下
+   ![permissions](permissions.png)
+5. 工作流将按计划自动运行，或者你可以手动触发
 
 ## 注意事项
 
