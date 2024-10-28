@@ -2,7 +2,7 @@ name: Sync Forked Repos
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天午夜 00:00 运行一次
+    - cron: '0 16 * * *' # 每天 UTC 时间 16:00（即北京时间凌晨 00:00）运行一次
   workflow_dispatch: # 手动触发工作流
 
 jobs:
@@ -13,27 +13,42 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
+      - name: Set timezone to Asia/Shanghai
+        run: |
+          echo "Setting timezone to Asia/Shanghai"
+          sudo timedatectl set-timezone Asia/Shanghai
+
+      - name: Display current time
+        run: |
+          echo "Current time in Beijing: $(date)"
+
       - name: Set up GitHub CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y gh jq
 
-      - name: Run sync-repos.sh script
+      - name: Run the Sync Forked Repos script
         run: | 
-            echo "Fetching the list of repositories for OWNER: $OWNER..."
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fetching the list of repositories for OWNER: $OWNER..."
             repos=$(gh repo list "$OWNER" --limit 200 --json nameWithOwner,isFork)
-
-            for repo in $(echo "$repos" | jq -c '.[]'); do
-            nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
-            isFork=$(echo "$repo" | jq -r '.isFork')
             
-            if [ "$isFork" = "true" ]; then
-                echo "Syncing forked repository: $nameWithOwner"
-                gh repo sync "$nameWithOwner"
-            else
-                echo "Skipping non-fork repository: $nameWithOwner"
-            fi
+            for repo in $(echo "$repos" | jq -c '.[]'); do
+                nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
+                isFork=$(echo "$repo" | jq -r '.isFork')
+                
+                if [ "$isFork" = "true" ]; then
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Syncing forked repository: $nameWithOwner..."
+                    
+                    if gh repo sync "$nameWithOwner"; then
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
+                    else
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
+                    fi
+                else
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping non-fork repository: $nameWithOwner"
+                fi
             done
+
         env:
             GH_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
             OWNER: ${{ github.repository_owner }}
