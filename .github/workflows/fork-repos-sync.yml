@@ -44,8 +44,6 @@ jobs:
                     else
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
                     fi
-                else
-                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping non-fork repository: $nameWithOwner"
                 fi
             done
 
