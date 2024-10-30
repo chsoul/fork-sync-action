@@ -11,7 +11,7 @@
 
 ## 工作流程
 
-工作流程定义在 `.github/workflows/update-sync.yml` 文件中，主要包括以下步骤：
+工作流程定义在 `.github/workflows/fork-repos-sync.yml` 文件中，主要包括以下步骤：
 
 1. 检出代码
 2. 设置 GitHub CLI
