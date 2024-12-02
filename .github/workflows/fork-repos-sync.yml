@@ -28,9 +28,13 @@ jobs:
           sudo apt-get install -y gh jq
 
       - name: Run the Sync Forked Repos script
-        run: | 
+        run: |
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fetching the list of repositories for OWNER: $OWNER..."
             repos=$(gh repo list "$OWNER" --limit 200 --json nameWithOwner,isFork)
+            
+            # 初始化错误计数器和失败仓库列表
+            error_count=0
+            failed_repos=()
             
             for repo in $(echo "$repos" | jq -c '.[]'); do
                 nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
@@ -43,9 +47,24 @@ jobs:
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
                     else
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
+                        error_count=$((error_count + 1))
+                        failed_repos+=("$nameWithOwner")
                     fi
                 fi
             done
+            
+            # 检查是否有同步失败的仓库
+            echo ""
+            echo "--------------------------------"
+            if [ $error_count -gt 0 ]; then
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sync completed with $error_count failures"
+                echo "Failed repositories:"
+                printf '%s\n' "${failed_repos[@]}"
+                exit 1
+            else
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] All repositories synced successfully"
+            fi
+            echo "--------------------------------"
 
         env:
             GH_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
