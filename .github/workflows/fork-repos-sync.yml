@@ -32,9 +32,10 @@ jobs:
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fetching the list of repositories for OWNER: $OWNER..."
             repos=$(gh repo list "$OWNER" --limit 200 --json nameWithOwner,isFork)
             
-            # 初始化错误计数器和失败仓库列表
+            # 初始化错误计数器和仓库列表
             error_count=0
             failed_repos=()
+            updated_repos=()
             
             for repo in $(echo "$repos" | jq -c '.[]'); do
                 nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
@@ -43,8 +44,13 @@ jobs:
                 if [ "$isFork" = "true" ]; then
                     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Syncing forked repository: $nameWithOwner..."
                     
-                    if gh repo sync "$nameWithOwner"; then
+                    # 捕获 gh repo sync 的输出
+                    if output=$(gh repo sync "$nameWithOwner" 2>&1); then
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
+                        # 检查输出中是否包含 "fast-forward" 来判断是否有更新
+                        if [[ $output == *"fast-forward"* ]]; then
+                            updated_repos+=("$nameWithOwner")
+                        fi
                     else
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
                         error_count=$((error_count + 1))
@@ -56,6 +62,14 @@ jobs:
             # 检查是否有同步失败的仓库
             echo ""
             echo "--------------------------------"
+            # 先显示更新的仓库
+            if [ ${#updated_repos[@]} -gt 0 ]; then
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] Repositories with updates from upstream:"
+                printf '%s\n' "${updated_repos[@]}"
+                echo ""
+            fi
+            
+            # 显示失败的仓库
             if [ $error_count -gt 0 ]; then
                 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sync completed with $error_count failures"
                 echo "Failed repositories:"
