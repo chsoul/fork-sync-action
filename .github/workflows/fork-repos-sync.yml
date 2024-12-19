@@ -48,7 +48,7 @@ jobs:
                     if output=$(gh repo sync "$nameWithOwner" 2>&1); then
                         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
                         # 检查输出中是否包含 "fast-forward" 来判断是否有更新
-                        if [[ $output == *"fast-forward"* ]]; then
+                        if echo "$output" | grep -q "fast-forward"; then
                             updated_repos+=("$nameWithOwner")
                         fi
                     else
