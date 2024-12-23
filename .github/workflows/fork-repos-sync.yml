@@ -30,32 +30,37 @@ jobs:
       - name: Run the Sync Forked Repos script
         run: |
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] Fetching the list of repositories for OWNER: $OWNER..."
-            repos=$(gh repo list "$OWNER" --limit 200 --json nameWithOwner,isFork)
+            # 获取同步前的仓库列表和更新时间
+            before_sync_repos=$(gh repo list "$OWNER" --limit 200 --fork --json nameWithOwner,isFork,updatedAt)
             
             # 初始化错误计数器和仓库列表
             error_count=0
             failed_repos=()
             updated_repos=()
             
-            for repo in $(echo "$repos" | jq -c '.[]'); do
+            # 遍历所有fork仓库
+            echo "$before_sync_repos" | jq -c '.[]' | while read -r repo; do
                 nameWithOwner=$(echo "$repo" | jq -r '.nameWithOwner')
-                isFork=$(echo "$repo" | jq -r '.isFork')
+                before_updated_at=$(echo "$repo" | jq -r '.updatedAt')
                 
-                if [ "$isFork" = "true" ]; then
-                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Syncing forked repository: $nameWithOwner..."
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] Syncing forked repository: $nameWithOwner..."
+                
+                # 尝试同步仓库
+                if gh repo sync "$nameWithOwner" 2>&1; then
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
                     
-                    # 捕获 gh repo sync 的输出
-                    if output=$(gh repo sync "$nameWithOwner" 2>&1); then
-                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Successfully synced: $nameWithOwner"
-                        # 检查输出中是否包含 "fast-forward" 来判断是否有更新
-                        if echo "$output" | grep -q "fast-forward"; then
-                            updated_repos+=("$nameWithOwner")
-                        fi
-                    else
-                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
-                        error_count=$((error_count + 1))
-                        failed_repos+=("$nameWithOwner")
+                    # 获取同步后的更新时间
+                    after_updated_at=$(gh repo view "$nameWithOwner" --json updatedAt | jq -r '.updatedAt')
+                    
+                    # 比较更新时间
+                    if [ "$before_updated_at" != "$after_updated_at" ]; then
+                        updated_repos+=("$nameWithOwner")
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Repository updated: $nameWithOwner"
                     fi
+                else
+                    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed to sync: $nameWithOwner" >&2
+                    error_count=$((error_count + 1))
+                    failed_repos+=("$nameWithOwner")
                 fi
             done
             
