@@ -9,6 +9,9 @@ on:
     - cron: '0 16 */50 * *'
   workflow_dispatch: # 支持手动触发
 
+permissions:
+  contents: write  # 关键设置
+
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
