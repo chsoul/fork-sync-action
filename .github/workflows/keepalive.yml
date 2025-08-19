@@ -3,7 +3,7 @@ name: Keep Alive
 on:
   push:
     branches:
-      - alive
+      - master
   schedule:
     # 每 50 天执行一次（UTC 时间：每 50 天的 00:00）
     - cron: '0 16 */50 * *'
