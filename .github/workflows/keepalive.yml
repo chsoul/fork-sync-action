@@ -1,0 +1,28 @@
+name: Keep Alive
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    # 每 50 天执行一次（UTC 时间：每 50 天的 00:00）
+    - cron: '0 16 */50 * *'
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: write  # 关键设置
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make empty commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keep-alive commit"
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
