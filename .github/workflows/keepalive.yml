@@ -1,9 +1,12 @@
 name: Keep Alive
 
 on:
+  push:
+    branches:
+      - alive
   schedule:
     # 每 50 天执行一次（UTC 时间：每 50 天的 00:00）
-    - cron: '0 0 */50 * *'
+    - cron: '0 16 */50 * *'
   workflow_dispatch: # 支持手动触发
 
 jobs:
